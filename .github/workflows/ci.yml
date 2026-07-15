@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # check.sh and install.sh are POSIX sh; shellcheck ships with the runner.
+      - name: shellcheck
+        run: shellcheck -s sh check.sh install.sh
+
+      # shellcheck does not parse zsh, so the profile gets a real zsh -n.
+      - name: zsh profile syntax
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -qy zsh
+          zsh -n profiles/classic.zshrc
+
+      # The original bug, as a test: a machine still on oh-my-zsh + p10k gets
+      # migrated for real, and the result must actually load in zsh.
+      - name: migration smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Simulate a machine still using Oh My Zsh and Powerlevel10k.
+          export HOME="$RUNNER_TEMP/classic-home"
+          mkdir -p "$HOME"
+
+          printf '%s\n' \
+            'export ZSH="$HOME/.oh-my-zsh"' \
+            'ZSH_THEME="powerlevel10k/powerlevel10k"' \
+            'source "$ZSH/oh-my-zsh.sh"' > "$HOME/.zshrc"
+
+          # Perform the real migration.
+          sh ./install.sh --yes
+
+          # The new profile and generated stack must exist.
+          test -s "$HOME/.zshrc"
+          test -s "$HOME/.zsh/classic-stack.zsh"
+          grep -Fq 'zsh-classic-stack "classic" profile' "$HOME/.zshrc"
+          grep -Fq 'classic-stack.zsh' "$HOME/.zshrc"
+
+          # The old configuration must have been backed up and disabled.
+          backup=$(find "$HOME" -maxdepth 1 \
+            -name '.zshrc.bak.*' -print -quit)
+
+          test -n "$backup"
+          grep -Fq 'powerlevel10k/powerlevel10k' "$backup"
+          ! grep -Fq \
+            'ZSH_THEME="powerlevel10k/powerlevel10k"' \
+            "$HOME/.zshrc"
+
+          # Enabling twice must not duplicate the source line.
+          sh ./check.sh --enable >/dev/null
+          test "$(grep -c 'classic-stack.zsh' "$HOME/.zshrc")" -eq 1
+
+          # Load the resulting configuration in an isolated Zsh process.
+          zsh -dfc '
+            set -e
+            source "$HOME/.zshrc"
+
+            [[ -o AUTO_CD ]]
+            alias g >/dev/null
+            whence mkcd >/dev/null
+            whence compdef >/dev/null
+          '
