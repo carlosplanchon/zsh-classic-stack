@@ -1,5 +1,7 @@
 # zsh-classic-stack
 
+[![lint](https://github.com/carlosplanchon/zsh-classic-stack/actions/workflows/lint.yml/badge.svg)](https://github.com/carlosplanchon/zsh-classic-stack/actions/workflows/lint.yml)
+
 One script that checks the classic zsh interactive stack on your machine:
 [zsh](https://www.zsh.org/) itself,
 [starship](https://starship.rs/) (the prompt engine),

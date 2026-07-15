@@ -1,0 +1,23 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # check.sh and install.sh are POSIX sh; shellcheck ships with the runner.
+      - name: shellcheck
+        run: shellcheck -s sh check.sh install.sh
+
+      # shellcheck does not parse zsh, so the profile gets a real zsh -n.
+      - name: zsh profile syntax
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -qy zsh
+          zsh -n profiles/classic.zshrc
