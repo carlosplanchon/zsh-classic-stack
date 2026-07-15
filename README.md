@@ -21,9 +21,10 @@ For each tool it reports one of three states:
 - **not installed**: prints the exact install command for your package
   manager.
 
-When more than one thing is missing, the report ends with a single combined
-install command for your package manager (with `--needed` on pacman), so a
-fresh machine is one paste away.
+When packaged dependencies are missing, the report ends with one combined
+command for your package manager (with `--needed` on pacman). Pieces that
+install by script or clone instead (starship on apt, zsh-completions on
+apt and dnf) keep their own lines.
 
 It reads your `~/.zshrc` to tell those states apart, but by default it never
 edits anything, never installs anything, and never runs sudo. Run it as

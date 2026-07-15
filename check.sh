@@ -470,7 +470,9 @@ if [ -n "$MISSING" ] && [ "$PM" != unknown ]; then
 fi
 
 say ''
-if [ "$ENABLE" -eq 1 ] || [ "$STACK_WIRED" -eq 1 ]; then
+if [ "$ENABLE" -eq 1 ] && [ "$HAVE_ZSH" -eq 0 ]; then
+  say 'done. nothing wired yet: install zsh first, then rerun with --enable.'
+elif [ "$ENABLE" -eq 1 ] || [ "$STACK_WIRED" -eq 1 ]; then
   say 'done. changes apply in new shells (or run: exec zsh).'
 else
   say 'done. rerun with --enable to wire up the installed tools automatically.'
