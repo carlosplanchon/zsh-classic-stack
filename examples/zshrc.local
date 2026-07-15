@@ -1,0 +1,37 @@
+# ~/.zshrc.local: machine-specific config for the zsh-classic-stack profile.
+#
+# The profile sources this file (when it exists) before the tool
+# integrations, so PATH additions and env vars set here are visible to
+# direnv, starship and the stack. Aliases defined here override the
+# profile's general ones.
+#
+# Everything below is commented out, so copying this file is a no-op:
+#   cp examples/zshrc.local ~/.zshrc.local
+# then uncomment and edit what applies to this machine.
+
+# --- Editor and pager ----------------------------------------------
+# export EDITOR=nvim
+# export VISUAL=$EDITOR
+
+# --- PATH additions -------------------------------------------------
+# Toolchains the profile cannot guess. It already adds ~/.local/bin and
+# dedupes PATH, so repeats are harmless.
+# export PATH="$HOME/.cargo/bin:$PATH"          # rust
+# export PATH="$HOME/go/bin:$PATH"              # go
+# export PATH="$HOME/.npm-global/bin:$PATH"     # npm prefix installs
+# export BUN_INSTALL="$HOME/.bun"               # bun
+# export PATH="$BUN_INSTALL/bin:$PATH"
+
+# --- Extra completions ----------------------------------------------
+# Tools that ship their own completion file; compinit already ran.
+# [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+
+# --- Tool tweaks -----------------------------------------------------
+# The stack initializes after this file, so its knobs belong here.
+# export STARSHIP_CONFIG="$HOME/.config/starship-custom.toml"
+# export _ZO_ECHO=1                             # zoxide: print where it jumps
+# export FZF_DEFAULT_OPTS='--height 40% --reverse'
+
+# --- Private aliases and functions ------------------------------------
+# alias work='cd ~/work'
+# alias serve='python -m http.server'

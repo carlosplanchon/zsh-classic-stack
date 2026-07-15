@@ -95,7 +95,9 @@ enough to deactivate them, the backup restores everything, and you can
 remove the leftovers by hand whenever you feel safe. Machine-specific
 config (PATH additions, `EDITOR`, private aliases) belongs in
 `~/.zshrc.local`, which the profile sources automatically: salvage those
-lines from the backup after migrating.
+lines from the backup after migrating. A fully commented starting point
+ships in [`examples/zshrc.local`](examples/zshrc.local); copying it as-is
+is a no-op until you uncomment what applies.
 
 ## What it knows, per system
 

@@ -25,6 +25,7 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -qy zsh
           zsh -n profiles/classic.zshrc
+          zsh -n examples/zshrc.local
 
       # The original bug, as a test: a machine still on oh-my-zsh + p10k gets
       # migrated for real, and the result must actually load in zsh.

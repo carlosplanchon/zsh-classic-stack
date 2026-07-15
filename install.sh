@@ -107,6 +107,14 @@ cp "$PROFILE" "$ZSHRC"
 chmod 644 "$ZSHRC"
 say "classic profile installed at $ZSHRC"
 say ''
+say "machine-specific config goes in ${ZDOTDIR:-$HOME}/.zshrc.local; for instance:"
+say '  export EDITOR=nvim'
+# shellcheck disable=SC2016  # printed literally: the line belongs in ~/.zshrc.local.
+say '  export PATH="$HOME/.cargo/bin:$PATH"'
+say "  alias work='cd ~/work'"
+say 'a fuller commented example ships with the repo:'
+say '  https://github.com/carlosplanchon/zsh-classic-stack/blob/main/examples/zshrc.local'
+say ''
 
 sh "$CHECK" --enable
 
