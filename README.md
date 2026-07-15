@@ -105,6 +105,25 @@ lines from the backup after migrating. A fully commented starting point
 ships in [`examples/zshrc.local`](examples/zshrc.local); copying it as-is
 is a no-op until you uncomment what applies.
 
+## Recommended install order
+
+Setting up the whole thing, prompt included? Shell first, looks second:
+
+```sh
+# 1. the zsh environment (this repo)
+curl -sS https://raw.githubusercontent.com/carlosplanchon/zsh-classic-stack/main/install.sh | sh -s -- --yes
+
+# 2. starship plus the p10k rainbow preset
+curl -sS https://raw.githubusercontent.com/carlosplanchon/starship-p10k-rainbow/main/install.sh | sh -s -- --install-starship
+
+# 3. new shell
+exec zsh
+```
+
+Recommended, not required: neither installer writes the other's files, and
+the profile initializes starship only when present, so the reverse order
+works too and the prompt lights up on the next shell either way.
+
 ## What it knows, per system
 
 | | Arch (pacman) | Debian/Ubuntu (apt) | Fedora (dnf) | Homebrew |
