@@ -157,6 +157,9 @@ it works. Worst case is an unnecessary suggestion.
 - [starship-p10k-rainbow](https://github.com/carlosplanchon/starship-p10k-rainbow):
   the Starship preset this script grew out of. The prompt for the muscle
   memory; this stack for the rest of it.
+- [sway-workstation](https://github.com/carlosplanchon/sway-workstation):
+  the reproducible Sway desktop this shell lives in. Desktop, shell and
+  prompt: the three repos compose a terminal-first workstation.
 
 ## License
 
