@@ -458,7 +458,9 @@ fi
 
 if [ -n "$MISSING" ] && [ "$PM" != unknown ]; then
   say ''
-  say 'everything missing, in one command:'
+  # "available from" and not "everything": on apt and dnf some pieces
+  # install by script or clone instead and stay out of this line.
+  say "missing packages available from $PM, in one command:"
   case $PM in
     pacman) say "  sudo pacman -S --needed$MISSING" ;;
     apt)    say "  sudo apt install$MISSING" ;;

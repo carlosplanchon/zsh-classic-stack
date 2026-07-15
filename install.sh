@@ -110,6 +110,13 @@ say ''
 
 sh "$CHECK" --enable
 
+if ! command -v zsh >/dev/null 2>&1; then
+  say ''
+  say 'note: zsh itself is missing, so the stack file was NOT created yet.'
+  say 'after installing the packages above, finish the wiring with:'
+  say "  curl -sS $RAW_BASE/check.sh | sh -s -- --enable"
+fi
+
 if ! command -v starship >/dev/null 2>&1; then
   say ''
   say 'note: starship is not installed, so the prompt stays plain for now.'

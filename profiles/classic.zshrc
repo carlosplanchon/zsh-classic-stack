@@ -8,7 +8,8 @@
 # at the end in the correct order.
 #
 # Machine-specific config (PATH additions, EDITOR, private aliases) belongs
-# in ~/.zshrc.local, which loads near the end of this file. Installed by
+# in ~/.zshrc.local, which loads before the tool integrations so its PATH
+# and env vars are visible to direnv, starship and the stack. Installed by
 # install.sh, which backs up your previous ~/.zshrc first.
 
 # --- PATH & environment -------------------------------------------
@@ -263,6 +264,13 @@ _terminal_title_preexec() {
 add-zsh-hook precmd _terminal_title_precmd
 add-zsh-hook preexec _terminal_title_preexec
 
+# --- Personal machine-specific config ------------------------------
+# Before the integrations below on purpose: PATH additions made here can
+# make direnv or starship visible, and env vars (STARSHIP_CONFIG, _ZO_*)
+# exist before the tools initialize. Aliases defined here override the
+# general ones above.
+[[ -r "${ZDOTDIR:-$HOME}/.zshrc.local" ]] && source "${ZDOTDIR:-$HOME}/.zshrc.local"
+
 # --- Integrations --------------------------------------------------
 (( $+commands[direnv] )) && eval "$(direnv hook zsh)"
 
@@ -270,9 +278,6 @@ add-zsh-hook preexec _terminal_title_preexec
 # For a Powerlevel10k rainbow look, pair this profile with
 # https://github.com/carlosplanchon/starship-p10k-rainbow
 (( $+commands[starship] )) && eval "$(starship init zsh)"
-
-# --- Personal machine-specific config ------------------------------
-[[ -r "${ZDOTDIR:-$HOME}/.zshrc.local" ]] && source "${ZDOTDIR:-$HOME}/.zshrc.local"
 
 # --- The classic stack (keep last: syntax highlighting must load last)
 [[ -r "$HOME/.zsh/classic-stack.zsh" ]] && source "$HOME/.zsh/classic-stack.zsh"
