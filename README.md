@@ -2,13 +2,16 @@
 
 One script that checks the classic zsh interactive stack on your machine:
 [zsh](https://www.zsh.org/) itself,
+[starship](https://starship.rs/) (the prompt engine),
 [fzf](https://github.com/junegunn/fzf),
 [zoxide](https://github.com/ajeetdsouza/zoxide),
 [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions),
 [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
 and [zsh-completions](https://github.com/zsh-users/zsh-completions).
 Report-only by default; the opt-in `--enable` wires up whatever is already
-installed.
+installed, and `install.sh` goes all the way: it replaces your `~/.zshrc`
+with a complete, framework-free profile when you want a real migration off
+oh-my-zsh / Powerlevel10k.
 
 For each tool it reports one of three states:
 
@@ -17,6 +20,10 @@ For each tool it reports one of three states:
   system (source paths differ per distro);
 - **not installed**: prints the exact install command for your package
   manager.
+
+When more than one thing is missing, the report ends with a single combined
+install command for your package manager (with `--needed` on pacman), so a
+fresh machine is one paste away.
 
 It reads your `~/.zshrc` to tell those states apart, but by default it never
 edits anything, never installs anything, and never runs sudo. Run it as
@@ -49,10 +56,49 @@ curl -sS https://raw.githubusercontent.com/carlosplanchon/zsh-classic-stack/main
 Keep that source line near the end of `~/.zshrc`: anything you load after
 it breaks the "syntax highlighting last" rule.
 
+`--enable` is deliberately additive: it never removes anything from your
+config. If your `~/.zshrc` still loads oh-my-zsh or Powerlevel10k, they
+stay in charge and the report flags it with a `[!!]` pointing to the full
+migration below.
+
+## Full migration: `install.sh`
+
+`--enable` wires tools into the `~/.zshrc` you already have. If what you
+have is an oh-my-zsh / Powerlevel10k setup you are trying to leave, or a
+bare default, `install.sh` replaces `~/.zshrc` with the complete profile in
+[`profiles/classic.zshrc`](profiles/classic.zshrc): sane options, shared
+history with sensible dedup, proper keybindings (arrows do prefix history
+search, Ctrl+arrows move by word), pushd-based directory navigation,
+a curated set of git aliases compatible with oh-my-zsh muscle memory,
+`clipcopy`/`clippaste` (macOS, Wayland or X11), a dynamic terminal title,
+guarded Starship init, and the classic stack loaded last in the correct
+order.
+
+Safe by default: with no arguments it only prints the plan.
+
+```sh
+curl -sS https://raw.githubusercontent.com/carlosplanchon/zsh-classic-stack/main/install.sh | sh
+```
+
+To apply it (timestamped backup of your current `~/.zshrc` first):
+
+```sh
+curl -sS https://raw.githubusercontent.com/carlosplanchon/zsh-classic-stack/main/install.sh | sh -s -- --yes
+```
+
+What it deliberately does not do: it never deletes `~/.oh-my-zsh`,
+`~/.p10k.zsh` or any theme files. Replacing the lines that loaded them is
+enough to deactivate them, the backup restores everything, and you can
+remove the leftovers by hand whenever you feel safe. Machine-specific
+config (PATH additions, `EDITOR`, private aliases) belongs in
+`~/.zshrc.local`, which the profile sources automatically: salvage those
+lines from the backup after migrating.
+
 ## What it knows, per system
 
 | | Arch (pacman) | Debian/Ubuntu (apt) | Fedora (dnf) | Homebrew |
 |---|---|---|---|---|
+| starship | `starship` | official installer (packages lag, when they exist) | `starship` | `starship` |
 | fzf | `fzf` | `fzf` | `fzf` | `fzf` |
 | zoxide | `zoxide` | `zoxide` (lags; upstream suggests its script) | `zoxide` | `zoxide` |
 | zsh-autosuggestions | `/usr/share/zsh/plugins/...` | `/usr/share/zsh-autosuggestions/...` | same path as Debian | `$(brew --prefix)/share/...` |

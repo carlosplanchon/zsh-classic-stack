@@ -33,6 +33,9 @@ for arg in "$@"; do
       say '            this script, safe to regenerate) and add one source line to'
       say '            ~/.zshrc, backing it up first. Tools stay uninstalled until'
       say '            you install them; the file picks each one up automatically.'
+      say ''
+      say 'For a full migration (replace ~/.zshrc with the classic profile, e.g.'
+      say 'coming from oh-my-zsh / Powerlevel10k) use install.sh from this repo.'
       exit 0 ;;
     *) say "unknown option: $arg (try --help)" >&2; exit 2 ;;
   esac
@@ -49,6 +52,10 @@ fi
 ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
 SNIPPET="$HOME/.zsh/classic-stack.zsh"
 if command -v zsh >/dev/null 2>&1; then HAVE_ZSH=1; else HAVE_ZSH=0; fi
+
+# Missing packages pile up here; the report ends with one combined install
+# command so a fresh machine is a single paste away.
+MISSING=''
 
 # Cheap "already wired up" heuristic: the name appears in ~/.zshrc. Also
 # catches plugin-manager setups (oh-my-zsh, zinit, ...) that keep plugins
@@ -240,6 +247,7 @@ plugin_report() {
   else
     say "  [--] $p_name: $p_desc Install it:"
     say "         $p_cmd"
+    if [ -n "$p_expect" ]; then MISSING="$MISSING $p_name"; fi
     if [ "$STACK_WIRED" -eq 1 ]; then
       say '       (already wired: the stack file loads it as soon as it lands)'
     elif [ -n "$p_expect" ]; then
@@ -265,6 +273,46 @@ else
   esac
   # shellcheck disable=SC2016  # printed literally: a command for the user to type.
   say '       then make it your login shell:  chsh -s "$(command -v zsh)"'
+  MISSING="$MISSING zsh"
+fi
+
+# A config still driven by oh-my-zsh / Powerlevel10k wins over anything
+# --enable appends; flag it instead of silently coexisting with it.
+if grep -qsE 'oh-my-zsh\.sh|powerlevel10k/powerlevel10k|powerlevel10k\.zsh-theme|\.p10k\.zsh' "$ZSHRC"; then
+  say '  [!!] your ~/.zshrc still loads Oh My Zsh / Powerlevel10k. --enable only'
+  say '       adds to your config, never removes: the old setup stays in charge.'
+  say '       For a full migration to the classic profile (backup included):'
+  say '         curl -sS https://raw.githubusercontent.com/carlosplanchon/zsh-classic-stack/main/install.sh | sh'
+fi
+
+if command -v starship >/dev/null 2>&1; then
+  if [ "$HAVE_ZSH" -eq 1 ] && ! in_zshrc starship; then
+    say '  [ok] starship: installed but not seen in ~/.zshrc; enable it by adding,'
+    # shellcheck disable=SC2016  # printed literally: the line belongs in ~/.zshrc.
+    say '       before the stack line:  eval "$(starship init zsh)"'
+  else
+    say '  [ok] starship'
+  fi
+else
+  say '  [--] starship: the prompt engine (for a p10k rainbow look, pair it with'
+  say '       https://github.com/carlosplanchon/starship-p10k-rainbow). Install it:'
+  case $PM in
+    pacman) say '         sudo pacman -S starship'
+            MISSING="$MISSING starship" ;;
+    dnf)    say '         sudo dnf install starship'
+            MISSING="$MISSING starship" ;;
+    brew)   say '         brew install starship'
+            MISSING="$MISSING starship" ;;
+    *)      say '         curl -sS https://starship.rs/install.sh | sh'
+            if [ "$PM" = apt ]; then
+              say '       (Debian and Ubuntu package it late and old, when at all;'
+              say '        the official installer is current and works everywhere)'
+            fi ;;
+  esac
+  if [ "$HAVE_ZSH" -eq 1 ]; then
+    # shellcheck disable=SC2016  # printed literally: the line belongs in ~/.zshrc.
+    say '       then add to ~/.zshrc:  eval "$(starship init zsh)"'
+  fi
 fi
 
 if command -v fzf >/dev/null 2>&1; then
@@ -295,6 +343,7 @@ else
     brew)   say '         brew install fzf' ;;
     *)      say '         https://github.com/junegunn/fzf#installation' ;;
   esac
+  MISSING="$MISSING fzf"
   if [ "$STACK_WIRED" -eq 1 ]; then
     say '       (already wired: the stack file loads it as soon as it lands)'
   elif [ "$HAVE_ZSH" -eq 1 ]; then
@@ -325,6 +374,7 @@ else
             say '        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh)' ;;
     *)      say '         curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh' ;;
   esac
+  MISSING="$MISSING zoxide"
   if [ "$STACK_WIRED" -eq 1 ]; then
     say '       (already wired: the stack file loads it as soon as it lands)'
   elif [ "$HAVE_ZSH" -eq 1 ]; then
@@ -363,7 +413,8 @@ if [ "$HAVE_ZSH" -eq 1 ]; then
     case $PM in
       pacman)
         say '         sudo pacman -S zsh-completions'
-        say '       (its functions land in fpath; no zshrc change needed)' ;;
+        say '       (its functions land in fpath; no zshrc change needed)'
+        MISSING="$MISSING zsh-completions" ;;
       brew)
         say '         brew install zsh-completions'
         if [ "$STACK_WIRED" -eq 1 ]; then
@@ -371,7 +422,8 @@ if [ "$HAVE_ZSH" -eq 1 ]; then
         else
           say '       then add to ~/.zshrc, before compinit:'
           say "         FPATH=$comp_dir:\$FPATH"
-        fi ;;
+        fi
+        MISSING="$MISSING zsh-completions" ;;
       apt|dnf)
         say '         (not packaged on Debian, Ubuntu or Fedora; clone it instead)'
         say '         git clone https://github.com/zsh-users/zsh-completions ~/.zsh/zsh-completions'
@@ -389,6 +441,30 @@ if [ "$HAVE_ZSH" -eq 1 ]; then
 else
   say '  [??] zsh-autosuggestions, zsh-syntax-highlighting, zsh-completions:'
   say '       skipped until zsh is installed.'
+  # Their files are detectable without zsh; probe them anyway so the
+  # combined command below can cover a fresh machine in one go.
+  if ! plugin_path zsh-autosuggestions >/dev/null; then
+    MISSING="$MISSING zsh-autosuggestions"
+  fi
+  if ! plugin_path zsh-syntax-highlighting >/dev/null; then
+    MISSING="$MISSING zsh-syntax-highlighting"
+  fi
+  if [ "$PM" = pacman ] && ! pacman -Qq zsh-completions >/dev/null 2>&1; then
+    MISSING="$MISSING zsh-completions"
+  elif [ "$PM" = brew ] && [ -n "$comp_dir" ] && [ ! -d "$comp_dir" ]; then
+    MISSING="$MISSING zsh-completions"
+  fi
+fi
+
+if [ -n "$MISSING" ] && [ "$PM" != unknown ]; then
+  say ''
+  say 'everything missing, in one command:'
+  case $PM in
+    pacman) say "  sudo pacman -S --needed$MISSING" ;;
+    apt)    say "  sudo apt install$MISSING" ;;
+    dnf)    say "  sudo dnf install$MISSING" ;;
+    brew)   say "  brew install$MISSING" ;;
+  esac
 fi
 
 say ''
