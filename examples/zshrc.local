@@ -24,7 +24,7 @@
 
 # --- Extra completions ----------------------------------------------
 # Tools that ship their own completion file; compinit already ran.
-# [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+# [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
 
 # --- Tool tweaks -----------------------------------------------------
 # The stack initializes after this file, so its knobs belong here.

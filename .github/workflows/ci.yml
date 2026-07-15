@@ -26,6 +26,12 @@ jobs:
           sudo apt-get install -qy zsh
           zsh -n profiles/classic.zshrc
           zsh -n examples/zshrc.local
+          # The example ships fully commented, so the check above proves
+          # little; also validate its snippets as they read uncommented.
+          grep -E '^# (export|alias|\[\[)' examples/zshrc.local \
+            | sed 's/^# //' > "$RUNNER_TEMP/zshrc-local-snippets"
+          test -s "$RUNNER_TEMP/zshrc-local-snippets"
+          zsh -n "$RUNNER_TEMP/zshrc-local-snippets"
 
       # The original bug, as a test: a machine still on oh-my-zsh + p10k gets
       # migrated for real, and the result must actually load in zsh.
