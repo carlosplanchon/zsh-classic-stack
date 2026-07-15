@@ -89,6 +89,12 @@ To apply it (timestamped backup of your current `~/.zshrc` first):
 curl -sS https://raw.githubusercontent.com/carlosplanchon/zsh-classic-stack/main/install.sh | sh -s -- --yes
 ```
 
+Add `--diff` to also print the old-to-new unified diff at the end. It is
+off by default because the old file may contain secrets; without it the
+installer prints the exact `diff` command to run locally instead. Either
+way, the removed (`-`) lines are your old config: go through them and move
+anything personal to `~/.zshrc.local`.
+
 What it deliberately does not do: it never deletes `~/.oh-my-zsh`,
 `~/.p10k.zsh` or any theme files. Replacing the lines that loaded them is
 enough to deactivate them, the backup restores everything, and you can

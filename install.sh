@@ -17,11 +17,13 @@ ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
 say() { printf '%s\n' "$*"; }
 
 YES=0
+SHOW_DIFF=0
 for arg in "$@"; do
   case "$arg" in
     --yes) YES=1 ;;
+    --diff) SHOW_DIFF=1 ;;
     -h|--help)
-      say 'usage: install.sh [--yes]'
+      say 'usage: install.sh [--yes] [--diff]'
       say ''
       say 'Replaces ~/.zshrc with the classic profile (backup first) and wires'
       say 'the stack via check.sh --enable. Never deletes anything: oh-my-zsh or'
@@ -29,6 +31,8 @@ for arg in "$@"; do
       say ''
       say '  (no args)  print the plan and exit; nothing is touched'
       say '  --yes      apply it'
+      say '  --diff     print the old-to-new unified diff after migrating'
+      say '             (off by default: the old file may contain secrets)'
       exit 0 ;;
     *) say "unknown option: $arg (try --help)" >&2; exit 2 ;;
   esac
@@ -97,6 +101,7 @@ fi
 
 # ---------- apply ----------
 
+bak=''
 if [ -f "$ZSHRC" ]; then
   bak="$ZSHRC.bak.$(date +%Y%m%d-%H%M%S)"
   cp "$ZSHRC" "$bak"
@@ -130,4 +135,37 @@ if ! command -v starship >/dev/null 2>&1; then
   say 'note: starship is not installed, so the prompt stays plain for now.'
   say 'for the prompt (and a p10k rainbow look) see:'
   say '  https://github.com/carlosplanchon/starship-p10k-rainbow'
+fi
+
+# ---------- migration review ----------
+
+say ''
+if [ -n "$bak" ]; then
+  say 'migration review (old -> new):'
+  say "  old: $bak"
+  say "  new: $ZSHRC"
+  if [ "$SHOW_DIFF" -eq 1 ]; then
+    if command -v diff >/dev/null 2>&1; then
+      # diff exits 1 when it finds differences: the normal, useful case.
+      # Without capturing that, set -e would abort right here.
+      diff_rc=0
+      diff -u "$bak" "$ZSHRC" || diff_rc=$?
+      case $diff_rc in
+        0) say '  (no differences)' ;;
+        1) ;;
+        *) say "warning: diff failed with exit code $diff_rc" >&2 ;;
+      esac
+    else
+      say 'warning: diff is not installed; once it is, review with:' >&2
+      say "  diff -u \"$bak\" \"$ZSHRC\""
+    fi
+  else
+    say 'review what changed with:'
+    say "  diff -u \"$bak\" \"$ZSHRC\""
+    say 'or rerun the migration with --diff to print it here.'
+  fi
+  say 'the removed (-) lines are your old config: go through them and move'
+  say "anything personal to ${ZDOTDIR:-$HOME}/.zshrc.local."
+else
+  say 'migration review: no previous zshrc existed, nothing to diff.'
 fi

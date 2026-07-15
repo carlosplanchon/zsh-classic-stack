@@ -49,8 +49,15 @@ jobs:
             'ZSH_THEME="powerlevel10k/powerlevel10k"' \
             'source "$ZSH/oh-my-zsh.sh"' > "$HOME/.zshrc"
 
-          # Perform the real migration.
-          sh ./install.sh --yes
+          # Perform the real migration, asking for the review diff.
+          sh ./install.sh --yes --diff | tee "$RUNNER_TEMP/install.out"
+
+          # The review must show the standard unified diff markers and
+          # point leftovers at ~/.zshrc.local.
+          grep -Fq 'migration review' "$RUNNER_TEMP/install.out"
+          grep -q '^--- ' "$RUNNER_TEMP/install.out"
+          grep -q '^+++ ' "$RUNNER_TEMP/install.out"
+          grep -Fq '.zshrc.local' "$RUNNER_TEMP/install.out"
 
           # The new profile and generated stack must exist.
           test -s "$HOME/.zshrc"
