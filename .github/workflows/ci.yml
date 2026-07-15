@@ -65,6 +65,12 @@ jobs:
           sh ./check.sh --enable >/dev/null
           test "$(grep -c 'classic-stack.zsh' "$HOME/.zshrc")" -eq 1
 
+          # The runner image ships group-writable dirs in zsh's fpath;
+          # compaudit rejects them and compinit aborts when it cannot ask.
+          # Normalize permissions like any admin would; no-op elsewhere.
+          zsh -dfc 'autoload -Uz compaudit; compaudit' 2>/dev/null \
+            | xargs -r sudo chmod go-w
+
           # Load the resulting configuration in an isolated Zsh process.
           zsh -dfc '
             set -e
