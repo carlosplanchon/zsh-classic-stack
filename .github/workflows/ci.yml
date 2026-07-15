@@ -68,7 +68,10 @@ jobs:
           # The runner image ships group-writable dirs in zsh's fpath;
           # compaudit rejects them and compinit aborts when it cannot ask.
           # Normalize permissions like any admin would; no-op elsewhere.
-          zsh -dfc 'autoload -Uz compaudit; compaudit' 2>/dev/null \
+          # The trailing true matters: compaudit exits 1 when it finds
+          # offenders, and pipefail would kill the step exactly when the
+          # cleanup has work to do.
+          zsh -dfc 'autoload -Uz compaudit; compaudit; true' 2>/dev/null \
             | xargs -r sudo chmod go-w
 
           # Load the resulting configuration in an isolated Zsh process.
