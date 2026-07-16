@@ -71,11 +71,14 @@ have is an oh-my-zsh / Powerlevel10k setup you are trying to leave, or a
 bare default, `install.sh` replaces `~/.zshrc` with the complete profile in
 [`profiles/classic.zshrc`](profiles/classic.zshrc): sane options, shared
 history with sensible dedup, proper keybindings (arrows do prefix history
-search, Ctrl+arrows move by word), pushd-based directory navigation,
-a curated set of git aliases compatible with oh-my-zsh muscle memory,
-`clipcopy`/`clippaste` (macOS, Wayland or X11), a dynamic terminal title,
-guarded Starship init, and the classic stack loaded last in the correct
-order.
+search, Ctrl+arrows move by word, PageUp/PageDown page through history),
+pushd-based directory navigation with `take`/`mkcd`, a curated set of git
+aliases compatible with oh-my-zsh muscle memory, colored `grep` (skipping
+VCS and virtualenv directories on recursive searches) and colored `diff`,
+`clipcopy`/`clippaste` (macOS, Wayland or X11), a dynamic terminal title
+plus OSC 7 cwd reporting (new tabs and splits open in your current
+directory), guarded Starship init, and the classic stack loaded last in
+the correct order.
 
 Safe by default: with no arguments it only prints the plan.
 

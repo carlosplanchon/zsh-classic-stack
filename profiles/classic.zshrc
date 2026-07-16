@@ -45,6 +45,16 @@ setopt EXTENDED_HISTORY SHARE_HISTORY HIST_EXPIRE_DUPS_FIRST \
        HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS \
        HIST_VERIFY HIST_FIND_NO_DUPS
 
+# Plain `history` lists everything instead of the builtin's last 16 events;
+# numeric and flag arguments keep their fc meaning (-10, 500, -E ...).
+history() {
+  if (( $# )); then
+    builtin fc -l "$@"
+  else
+    builtin fc -l 1
+  fi
+}
+
 # --- Completion ----------------------------------------------------
 ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 mkdir -p -- "$ZSH_CACHE_DIR/completion"
@@ -115,6 +125,14 @@ bindkey '^[[3;5~' kill-word
 bindkey '^[[Z' reverse-menu-complete
 [[ -n "${terminfo[kcbt]}" ]] && bindkey "${terminfo[kcbt]}" reverse-menu-complete
 
+# PageUp/PageDown page through history; Alt+M copies the previous word
+# (repeat it to reach earlier ones).
+bindkey '^[[5~' up-line-or-history
+bindkey '^[[6~' down-line-or-history
+[[ -n "${terminfo[kpp]}" ]] && bindkey "${terminfo[kpp]}" up-line-or-history
+[[ -n "${terminfo[knp]}" ]] && bindkey "${terminfo[knp]}" down-line-or-history
+bindkey '^[m' copy-prev-shell-word
+
 # Ctrl+R searches history (fzf takes this over when installed);
 # Ctrl+X Ctrl+E opens the line in $EDITOR.
 bindkey '^R' history-incremental-search-backward
@@ -166,6 +184,28 @@ mkcd() {
   mkdir -p -- "$@" && cd -- "${@[-1]}"
 }
 
+# take: mkcd plus the oh-my-zsh extras on top: a git URL is cloned and
+# entered, a tarball or zip URL is downloaded, unpacked and entered.
+take() {
+  local data dir
+  if [[ $1 =~ '^(https?|ftp).*\.(tar\.(gz|bz2|xz)|tgz)$' ]]; then
+    data=$(mktemp) || return
+    curl -fL "$1" > "$data" && tar xf "$data" && dir=$(tar tf "$data" | head -n 1)
+    rm -f -- "$data"
+    [[ -n $dir ]] && cd -- "${dir%%/*}"
+  elif [[ $1 =~ '^(https?|ftp).*\.zip$' ]]; then
+    data=$(mktemp) || return
+    curl -fL "$1" > "$data" && unzip "$data" && dir=$(unzip -lqq "$data" | awk 'NR==1 {print $4}')
+    rm -f -- "$data"
+    [[ -n $dir ]] && cd -- "${dir%%/*}"
+  elif [[ $1 =~ '^([A-Za-z0-9]+@|https?|git|ssh|ftps?|rsync).*\.git/?$' ]]; then
+    dir=${1%/}
+    git clone "$dir" && cd -- "$(basename -- "${dir%.git}")"
+  else
+    mkcd "$@"
+  fi
+}
+
 alias md='mkdir -p'
 alias rd='rmdir'
 
@@ -212,7 +252,18 @@ if [[ $OSTYPE == darwin* ]]; then
 else
   alias ls='ls --color=auto'
 fi
-alias grep='grep --color=auto'
+# grep in color and, on recursive searches, skipping VCS internals and
+# virtualenvs; egrep/fgrep keep working, without GNU grep's obsolescence
+# warning (they expand through the grep alias, so they inherit both flags).
+alias grep='grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox,.venv,venv}'
+alias egrep='grep -E'
+alias fgrep='grep -F'
+
+# diff in color, as a function rather than an alias so pipes and scripts get
+# it too; probed first because BSD/macOS diff has no --color.
+if command diff --color /dev/null /dev/null >/dev/null 2>&1; then
+  diff() { command diff --color "$@" }
+fi
 alias l='ls -lah'
 alias la='ls -lAh'
 alias ll='ls -lh'
@@ -261,7 +312,24 @@ _terminal_title_preexec() {
   print -rn -- $'\e]0;'"${1//[^[:print:]]/}"$'\a'
 }
 
+# OSC 7: report the cwd to the terminal so new tabs and splits open in the
+# same directory. Byte-wise percent-encoding, as the vte contract expects.
+_terminal_cwd_precmd() {
+  emulate -L zsh
+  local -x LC_ALL=C
+  local c encoded=''
+  for c in ${(s::)PWD}; do
+    if [[ $c == [A-Za-z0-9/:_.~-] ]]; then
+      encoded+=$c
+    else
+      encoded+=$(printf '%%%02X' "'$c")
+    fi
+  done
+  print -n -- "\e]7;file://${HOST}${encoded}\a"
+}
+
 add-zsh-hook precmd _terminal_title_precmd
+add-zsh-hook precmd _terminal_cwd_precmd
 add-zsh-hook preexec _terminal_title_preexec
 
 # --- Personal machine-specific config ------------------------------
